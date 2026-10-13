@@ -53,6 +53,18 @@ In order to ensure that the Laravel community is welcoming to all, please review
 
 If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
 
+## Portfolio administration
+
+The React portfolio uses this Laravel application to authenticate administrators and persist public portfolio content.
+
+1. Configure the database and session storage in `.env`, set `APP_URL` to this backend's public URL, and set `FRONTEND_URL` to the exact origin serving the React site. Credentialed CORS is restricted to that single origin.
+2. Set `FILESYSTEM_DISK=public` for CV uploads. On a local filesystem, run `php artisan storage:link` so the uploaded PDF can be downloaded.
+3. Apply migrations with `php artisan migrate`, then create the first administrator with `php artisan admin:create`. The command prompts for a username and a password without writing credentials to source files.
+4. Set `VITE_API_URL` in the frontend build environment to this backend's URL. For local development, the Vite server proxies requests to `http://127.0.0.1:8000`; set `BACKEND_URL` to override it.
+5. When the frontend and API are on different sites, configure HTTPS and `SESSION_SAME_SITE=none` with `SESSION_SECURE_COOKIE=true`. Browsers that block third-party cookies may require serving both applications from the same site (for example, through a reverse proxy).
+
+All private `/admin-api` routes require both a valid Laravel session and an administrator account. State-changing requests also require the session's CSRF token.
+
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
