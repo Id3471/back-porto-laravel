@@ -60,10 +60,53 @@ The React portfolio uses this Laravel application to authenticate administrators
 1. Configure the database and session storage in `.env`, set `APP_URL` to this backend's public URL, and set `FRONTEND_URL` to the exact origin serving the React site. Credentialed CORS is restricted to that single origin.
 2. Set `FILESYSTEM_DISK=public` for CV uploads. On a local filesystem, run `php artisan storage:link` so the uploaded PDF can be downloaded.
 3. Apply migrations with `php artisan migrate`, then create the first administrator with `php artisan admin:create`. The command prompts for a username and a password without writing credentials to source files.
-4. Set `VITE_API_URL` in the frontend build environment to this backend's URL. For local development, the Vite server proxies requests to `http://127.0.0.1:8000`; set `BACKEND_URL` to override it.
-5. When the frontend and API are on different sites, configure HTTPS and `SESSION_SAME_SITE=none` with `SESSION_SECURE_COOKIE=true`. Browsers that block third-party cookies may require serving both applications from the same site (for example, through a reverse proxy).
+4. Configure a real SMTP provider in `.env` using `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, and the verified sender address `MAIL_FROM_ADDRESS`. Set `CONTACT_TO_EMAIL` to the inbox that should receive portfolio messages. Never commit SMTP credentials. The contact API returns an explicit configuration error until a valid recipient is set.
+5. Set `VITE_API_URL` in the frontend build environment to this backend's URL. For local development, the Vite server proxies requests to `http://127.0.0.1:8000`; set `BACKEND_URL` to override it.
+6. When the frontend and API are on different sites, configure HTTPS and `SESSION_SAME_SITE=none` with `SESSION_SECURE_COOKIE=true`. Browsers that block third-party cookies may require serving both applications from the same site (for example, through a reverse proxy).
 
 All private `/admin-api` routes require both a valid Laravel session and an administrator account. State-changing requests also require the session's CSRF token.
+
+The public contact form sends messages synchronously through the configured mail transport. It is rate-limited to three submissions per IP every ten minutes and includes server-side validation and a honeypot. `GET /cv` returns the PDF uploaded in the administration as a file download.
+
+## Docker
+
+The backend image uses PHP 8.3 with Apache and serves Laravel from `public/`.
+Build it from this directory:
+
+```bash
+docker build -t portfolio-backend .
+```
+
+`docker/nginx.conf` is an optional reverse-proxy server configuration for an
+Nginx container on the same Docker network. It forwards requests to a backend
+service named `backend` on port 80. If your Compose service uses another name,
+update the `proxy_pass` upstream to match it. Configure TLS at Nginx or at the
+load balancer in front of it.
+
+Configure the container's environment variables with your deployment values
+(for example, by passing a local `.env` file that is kept out of the image):
+
+```bash
+docker run -d --name portfolio-backend -p 8000:80 --env-file .env \
+  -v portfolio-db:/var/www/html/database/database.sqlite \
+  -v portfolio-uploads:/var/www/html/storage/app/public \
+  portfolio-backend
+```
+
+The named volumes persist the SQLite database and uploaded CVs when the
+container is replaced. Keep `DB_CONNECTION=sqlite` for this setup; if using
+another database, configure its connection settings and remove the SQLite
+database volume. After starting the container, run migrations and create the
+initial administrator:
+
+```bash
+docker exec -it portfolio-backend php artisan migrate --force
+docker exec -it portfolio-backend php artisan admin:create
+```
+
+Set a valid `APP_KEY`, `APP_URL`, `FRONTEND_URL`, and mail configuration in the
+container environment before deploying. Do not pass secrets as Docker build
+arguments or copy `.env` into the image.
 
 ## License
 

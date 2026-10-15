@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\PublicPortfolioController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -20,4 +22,6 @@ Route::prefix('admin-api')->group(function () {
     });
 });
 
-Route::get('/portfolio-content', [AdminController::class, 'content']);
+Route::get('/portfolio-content', [PublicPortfolioController::class, 'content']);
+Route::get('/cv', [PublicPortfolioController::class, 'downloadCv']);
+Route::post('/contact', [ContactController::class, 'send'])->middleware('throttle:3,10');

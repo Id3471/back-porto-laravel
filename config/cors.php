@@ -3,7 +3,7 @@
 $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
 
 return [
-    'paths' => ['admin-api/*', 'portfolio-content', 'sanctum/csrf-cookie'],
+    'paths' => ['admin-api/*', 'contact', 'cv', 'portfolio-content', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     'allowed_origins' => [$frontendUrl],
     'allowed_origins_patterns' => [],
